@@ -1,0 +1,37 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: helidon-erp-api
+  labels:
+    app: helidon-erp-api
+spec:
+  type: ClusterIP
+  selector:
+    app: helidon-erp-api
+  ports:
+    - name: tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: helidon-erp-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helidon-erp-api
+  template:
+    metadata:
+      labels:
+        app: helidon-erp-api
+        version: v1
+    spec:
+      containers:
+      - name: helidon-erp-api
+        image: helidon-erp-api
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
