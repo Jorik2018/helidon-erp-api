@@ -227,7 +227,7 @@ stage('Build') {
 
             call gradlew.bat ^
                 -Porg.gradle.java.installations.paths="%JAVA_27_HOME%" ^
-                clean build -x test
+                clean installDist -x test
 
             if errorlevel 1 (
                 echo ERROR: Gradle build failed
@@ -237,33 +237,31 @@ stage('Build') {
     }
 }
 
-        stage('Verify Artifact') {
-            steps {
-                powershell '''
-                    Write-Host "============================"
-                    Write-Host "===== Verify Artifact ======="
-                    Write-Host "============================"
+      stage('Verify Distribution') {
+    steps {
+        bat '''
+            @echo off
 
-                    $jars = Get-ChildItem `
-                        -Path "$env:WORKSPACE\\build\\libs" `
-                        -Filter "*.jar" `
-                        -File |
-                        Where-Object {
-                            $_.Name -notmatch "-plain\\.jar$"
-                        }
+            echo ===============================
+            echo ===== Verify Distribution =====
+            echo ===============================
 
-                    if (-not $jars) {
-                        throw "No executable JAR found in build\\libs"
-                    }
+            if not exist "build\\install\\helidon-erp-api\\lib" (
+                echo ERROR: Distribution lib directory not found
+                exit /b 1
+            )
 
-                    Write-Host "Artifacts encontrados:"
+            if not exist "build\\install\\helidon-erp-api\\bin" (
+                echo ERROR: Distribution bin directory not found
+                exit /b 1
+            )
 
-                    foreach ($jar in $jars) {
-                        Write-Host " - $($jar.FullName)"
-                    }
-                '''
-            }
-        }
+            echo Distribution OK
+
+            dir "build\\install\\helidon-erp-api\\lib"
+        '''
+    }
+}
 
         stage('Stop Service') {
             steps {
@@ -284,78 +282,47 @@ stage('Build') {
             }
         }
 
-        stage('Deploy Files') {
-            steps {
-                powershell '''
-                    $source = $env:WORKSPACE
-                    $destination = $env:DEPLOY_DIR
+stage('Deploy Distribution') {
+    steps {
+        powershell '''
+            Write-Host "=============================="
+            Write-Host "===== Deploy Distribution ===="
+            Write-Host "=============================="
 
-                    Write-Host "============================"
-                    Write-Host "===== Deploy Files =========="
-                    Write-Host "============================"
+            $source = "$env:WORKSPACE\\build\\install\\helidon-erp-api"
+            $destination = $env:DEPLOY_DIR
 
-                    Write-Host "SOURCE: $source"
-                    Write-Host "DEST:   $destination"
-
-                    if (-not (Test-Path $destination)) {
-                        New-Item `
-                            -ItemType Directory `
-                            -Path $destination `
-                            -Force | Out-Null
-                    }
-
-                    robocopy `
-                        $source `
-                        $destination `
-                        /MIR `
-                        /XD ".git" ".gradle" "build" `
-                        /XF "*.log"
-
-                    $code = $LASTEXITCODE
-
-                    if ($code -gt 7) {
-                        throw "Robocopy failed with exit code $code"
-                    }
-
-                    exit 0
-                '''
+            if (-not (Test-Path $source)) {
+                throw "Distribution not found: $source"
             }
-        }
 
-        stage('Deploy Artifact') {
-            steps {
-                powershell '''
-                    Write-Host "============================"
-                    Write-Host "===== Deploy Artifact ======="
-                    Write-Host "============================"
-
-                    $jar = Get-ChildItem `
-                        -Path "$env:WORKSPACE\\build\\libs" `
-                        -Filter "*.jar" `
-                        -File |
-                        Where-Object {
-                            $_.Name -notmatch "-plain\\.jar$"
-                        } |
-                        Select-Object -First 1
-
-                    if (-not $jar) {
-                        throw "Executable JAR not found"
-                    }
-
-                    $target = "$env:DEPLOY_DIR\\helidon-erp-api.jar"
-
-                    Copy-Item `
-                        $jar.FullName `
-                        $target `
-                        -Force
-
-                    Write-Host "Artifact deployed:"
-                    Write-Host $target
-                '''
+            if (-not (Test-Path $destination)) {
+                New-Item `
+                    -ItemType Directory `
+                    -Path $destination `
+                    -Force | Out-Null
             }
-        }
 
-  stage('Configure Service') {
+            robocopy `
+                $source `
+                $destination `
+                /MIR
+
+            $code = $LASTEXITCODE
+
+            if ($code -gt 7) {
+                throw "Robocopy failed with exit code $code"
+            }
+
+            Write-Host "Distribution deployed:"
+            Write-Host $destination
+
+            exit 0
+        '''
+    }
+}
+
+stage('Configure Service') {
     steps {
         bat '''
             @echo off
@@ -372,6 +339,11 @@ stage('Build') {
                 exit /b 1
             )
 
+            if not exist "%DEPLOY_DIR%\\lib" (
+                echo ERROR: lib directory not found
+                exit /b 1
+            )
+
             "%PYTHON_HOME%\\python.exe" ^
                 "%SERVICE_MANAGER%" ^
                 install ^
@@ -381,8 +353,7 @@ stage('Build') {
                 --description "%SERVICE_DESCRIPTION%" ^
                 --type rust ^
                 --executable "%JAVA_EXE%" ^
-                --args "-jar helidon-erp-api.jar" ^
-                --env "SERVER_PORT=%PORT%"
+                --args "-Dserver.port=%PORT% -cp lib\\* org.isobit.erp.Main"
 
             if errorlevel 1 (
                 echo ERROR: Service configuration failed
