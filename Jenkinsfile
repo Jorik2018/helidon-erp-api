@@ -8,16 +8,15 @@ pipeline {
     }
 
     environment {
-        SERVICE_ID = 'helidon-erp-api'
-        SERVICE_NAME = 'Helidon ERP API'
-        SERVICE_DESCRIPTION = 'Helidon ERP API'
+    SERVICE_ID = 'helidon-erp-api'
+    SERVICE_NAME = 'Helidon ERP API'
+    SERVICE_DESCRIPTION = 'Helidon ERP API'
 
-        DEPLOY_DIR = 'D:\\microservices\\helidon-erp-api'
+    DEPLOY_DIR = 'D:\\microservices\\helidon-erp-api'
+    PORT = '2267'
 
-        PORT = '2267'
-
-        JAVA_HOME = 'C:\\Program Files\\Java\\jdk-27'
-        PATH = "${JAVA_HOME}\\bin;${env.PATH}"
+    JAVA_HOME = 'D:\\java\\jdk-27'
+    PATH = "${JAVA_HOME}\\bin;${env.PATH}"
     }
 
     stages {
@@ -27,7 +26,83 @@ pipeline {
                 checkout scm
             }
         }
+stage('Install Java 27') {
+    steps {
+        powershell '''
+            $javaHome = "D:\\java\\jdk-27"
+            $javaExe = "$javaHome\\bin\\java.exe"
 
+            if (Test-Path $javaExe) {
+                Write-Host "Java 27 ya esta instalado"
+                & $javaExe -version
+                exit 0
+            }
+
+            Write-Host "Java 27 no encontrado. Instalando..."
+
+            [Net.ServicePointManager]::SecurityProtocol = `
+                [Net.SecurityProtocolType]::Tls12
+
+            $javaRoot = "D:\\java"
+            $zip = "$env:TEMP\\jdk27.zip"
+            $extractDir = "$env:TEMP\\jdk27-extract"
+
+            if (-not (Test-Path $javaRoot)) {
+                New-Item `
+                    -ItemType Directory `
+                    -Path $javaRoot `
+                    -Force | Out-Null
+            }
+
+            if (Test-Path $extractDir) {
+                Remove-Item $extractDir -Recurse -Force
+            }
+
+            New-Item `
+                -ItemType Directory `
+                -Path $extractDir `
+                -Force | Out-Null
+
+            Write-Host "Descargando JDK 27..."
+
+            Invoke-WebRequest `
+                -UseBasicParsing `
+                -Uri "https://download.java.net/java/GA/jdk27/latest/binaries/openjdk-27_windows-x64_bin.zip" `
+                -OutFile $zip
+
+            Write-Host "Descomprimiendo..."
+
+            Expand-Archive `
+                -Path $zip `
+                -DestinationPath $extractDir `
+                -Force
+
+            $jdkDir = Get-ChildItem `
+                -Path $extractDir `
+                -Directory |
+                Select-Object -First 1
+
+            if (-not $jdkDir) {
+                throw "No se encontro el JDK dentro del ZIP"
+            }
+
+            Move-Item `
+                -Path $jdkDir.FullName `
+                -Destination $javaHome `
+                -Force
+
+            Remove-Item $zip -Force
+            Remove-Item $extractDir -Recurse -Force
+
+            if (-not (Test-Path $javaExe)) {
+                throw "Java 27 no se instalo correctamente"
+            }
+
+            Write-Host "Java 27 instalado correctamente:"
+            & $javaExe -version
+        '''
+    }
+}
         stage('Environment') {
             steps {
                 bat '''
