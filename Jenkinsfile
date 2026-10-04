@@ -7,7 +7,7 @@ pipeline {
         disableConcurrentBuilds()
     }
 
-    environment {
+environment {
     SERVICE_ID = 'helidon-erp-api'
     SERVICE_NAME = 'Helidon ERP API'
     SERVICE_DESCRIPTION = 'Helidon ERP API'
@@ -15,9 +15,11 @@ pipeline {
     DEPLOY_DIR = 'D:\\microservices\\helidon-erp-api'
     PORT = '2267'
 
-    JAVA_HOME = 'D:\\java\\jdk-27'
+    JAVA_HOME = 'D:\\java\\jdk-17.0.5+8'
+    JAVA_27_HOME = 'D:\\java\\jdk-27'
+
     PATH = "${JAVA_HOME}\\bin;${env.PATH}"
-    }
+}
 
     stages {
 
@@ -186,24 +188,32 @@ stage('Install Java 27') {
             }
         }
 
-        stage('Gradle Version') {
-            steps {
-                bat '''
-                    @echo off
+stage('Gradle Version') {
+    steps {
+        bat '''
+            @echo off
 
-                    echo ============================
-                    echo ===== Gradle ===============
-                    echo ============================
+            echo ============================
+            echo ===== Gradle ===============
+            echo ============================
 
-                    call gradlew.bat --version
+            echo Gradle JVM:
+            "%JAVA_HOME%\\bin\\java.exe" -version
 
-                    if errorlevel 1 (
-                        echo ERROR: Gradle wrapper failed
-                        exit /b 1
-                    )
-                '''
-            }
-        }
+            echo.
+            echo Java 27 toolchain:
+            "%JAVA_27_HOME%\\bin\\java.exe" -version
+
+            echo.
+            call gradlew.bat --version
+
+            if errorlevel 1 (
+                echo ERROR: Gradle wrapper failed
+                exit /b 1
+            )
+        '''
+    }
+}
 
         stage('Build') {
             steps {
