@@ -78,17 +78,21 @@ public class PokemonService implements HttpService {
         }
     }
 
-    private void initData() {
-        DbTransaction tx = dbClient.transaction();
-        try {
-            initTypes(tx);
-            initPokemons(tx);
-            tx.commit();
-        } catch (Throwable t) {
-            tx.rollback();
-            throw t;
-        }
-    }
+private void initData() {
+    // DbTransaction tx = dbClient.transaction();
+    // try {
+    //     initTypes(tx);
+    //     initPokemons(tx);
+    //     tx.commit();
+    // } catch (Throwable t) {
+    //     tx.rollback();
+    //     throw t;
+    // }
+        DbExecute exec = dbClient.execute();
+
+    initTypes(exec);
+    initPokemons(exec);
+}
 
     private static void initTypes(DbExecute exec) {
         try (JsonReader reader = Json.createReader(PokemonService.class.getResourceAsStream("/pokemon-types.json"))) {
