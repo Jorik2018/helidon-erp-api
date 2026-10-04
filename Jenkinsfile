@@ -33,7 +33,7 @@ stage('Install Java 27') {
             $javaExe = "$javaHome\\bin\\java.exe"
 
             if (Test-Path $javaExe) {
-                Write-Host "Java 27 ya esta instalado"
+                Write-Host "Java 27 ya esta instalado:"
                 & $javaExe -version
                 exit 0
             }
@@ -55,7 +55,10 @@ stage('Install Java 27') {
             }
 
             if (Test-Path $extractDir) {
-                Remove-Item $extractDir -Recurse -Force
+                Remove-Item `
+                    $extractDir `
+                    -Recurse `
+                    -Force
             }
 
             New-Item `
@@ -63,12 +66,25 @@ stage('Install Java 27') {
                 -Path $extractDir `
                 -Force | Out-Null
 
-            Write-Host "Descargando JDK 27..."
+            if (Test-Path $zip) {
+                Remove-Item $zip -Force
+            }
+
+            Write-Host "Descargando Temurin JDK 27..."
+
+            $url = "https://api.adoptium.net/v3/binary/latest/27/ga/windows/x64/jdk/hotspot/normal/eclipse"
 
             Invoke-WebRequest `
                 -UseBasicParsing `
-                -Uri "https://download.java.net/java/GA/jdk27/latest/binaries/openjdk-27_windows-x64_bin.zip" `
+                -Uri $url `
                 -OutFile $zip
+
+            if (-not (Test-Path $zip)) {
+                throw "No se pudo descargar JDK 27"
+            }
+
+            Write-Host "ZIP descargado:"
+            Write-Host $zip
 
             Write-Host "Descomprimiendo..."
 
@@ -83,22 +99,42 @@ stage('Install Java 27') {
                 Select-Object -First 1
 
             if (-not $jdkDir) {
-                throw "No se encontro el JDK dentro del ZIP"
+                throw "No se encontro el directorio del JDK dentro del ZIP"
+            }
+
+            Write-Host "Directorio encontrado:"
+            Write-Host $jdkDir.FullName
+
+            if (Test-Path $javaHome) {
+                Remove-Item `
+                    $javaHome `
+                    -Recurse `
+                    -Force
             }
 
             Move-Item `
                 -Path $jdkDir.FullName `
-                -Destination $javaHome `
-                -Force
+                -Destination $javaHome
 
-            Remove-Item $zip -Force
-            Remove-Item $extractDir -Recurse -Force
+            Remove-Item `
+                $zip `
+                -Force `
+                -ErrorAction SilentlyContinue
+
+            Remove-Item `
+                $extractDir `
+                -Recurse `
+                -Force `
+                -ErrorAction SilentlyContinue
 
             if (-not (Test-Path $javaExe)) {
                 throw "Java 27 no se instalo correctamente"
             }
 
-            Write-Host "Java 27 instalado correctamente:"
+            Write-Host "================================="
+            Write-Host "Java 27 instalado correctamente"
+            Write-Host "================================="
+
             & $javaExe -version
         '''
     }
