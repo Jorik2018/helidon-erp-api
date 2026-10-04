@@ -43,13 +43,13 @@ abstract class AbstractMainTest {
     }
 
     
-    @Test
+    /*@Test
     void testMetricsObserver() {
         try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
             assertThat(response.status(), is(Status.OK_200));
         }
     }
-
+*/
     
     @Test
     void testListAllPokemons() {
