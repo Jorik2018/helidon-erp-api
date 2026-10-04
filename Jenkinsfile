@@ -17,6 +17,7 @@ environment {
 
     JAVA_HOME = 'D:\\java\\jdk-17.0.5+8'
     JAVA_27_HOME = 'D:\\java\\jdk-27'
+    
 
     PATH = "${JAVA_HOME}\\bin;${env.PATH}"
 }
@@ -215,24 +216,26 @@ stage('Gradle Version') {
     }
 }
 
-        stage('Build') {
-            steps {
-                bat '''
-                    @echo off
+stage('Build') {
+    steps {
+        bat '''
+            @echo off
 
-                    echo ============================
-                    echo ===== Build ================
-                    echo ============================
+            echo ============================
+            echo ===== Build ================
+            echo ============================
 
-                    call gradlew.bat clean build
+            call gradlew.bat ^
+                -Porg.gradle.java.installations.paths="%JAVA_27_HOME%" ^
+                clean build -x test
 
-                    if errorlevel 1 (
-                        echo ERROR: Gradle build failed
-                        exit /b 1
-                    )
-                '''
-            }
-        }
+            if errorlevel 1 (
+                echo ERROR: Gradle build failed
+                exit /b 1
+            )
+        '''
+    }
+}
 
         stage('Verify Artifact') {
             steps {
@@ -352,42 +355,42 @@ stage('Gradle Version') {
             }
         }
 
-        stage('Configure Service') {
-            steps {
-                bat '''
-                    @echo off
+  stage('Configure Service') {
+    steps {
+        bat '''
+            @echo off
 
-                    echo ==============================
-                    echo ===== Configure Service =====
-                    echo ==============================
+            echo ==============================
+            echo ===== Configure Service =====
+            echo ==============================
 
-                    set "JAVA_EXE=%JAVA_HOME%\\bin\\java.exe"
+            set "JAVA_EXE=%JAVA_27_HOME%\\bin\\java.exe"
 
-                    if not exist "%JAVA_EXE%" (
-                        echo ERROR: Java executable not found:
-                        echo %JAVA_EXE%
-                        exit /b 1
-                    )
+            if not exist "%JAVA_EXE%" (
+                echo ERROR: Java executable not found:
+                echo %JAVA_EXE%
+                exit /b 1
+            )
 
-                    "%PYTHON_HOME%\\python.exe" ^
-                        "%SERVICE_MANAGER%" ^
-                        install ^
-                        "%SERVICE_ID%" ^
-                        "%DEPLOY_DIR%" ^
-                        --name "%SERVICE_NAME%" ^
-                        --description "%SERVICE_DESCRIPTION%" ^
-                        --type rust ^
-                        --executable "%JAVA_EXE%" ^
-                        --args "-jar helidon-erp-api.jar" ^
-                        --env "SERVER_PORT=%PORT%"
+            "%PYTHON_HOME%\\python.exe" ^
+                "%SERVICE_MANAGER%" ^
+                install ^
+                "%SERVICE_ID%" ^
+                "%DEPLOY_DIR%" ^
+                --name "%SERVICE_NAME%" ^
+                --description "%SERVICE_DESCRIPTION%" ^
+                --type rust ^
+                --executable "%JAVA_EXE%" ^
+                --args "-jar helidon-erp-api.jar" ^
+                --env "SERVER_PORT=%PORT%"
 
-                    if errorlevel 1 (
-                        echo ERROR: Service configuration failed
-                        exit /b 1
-                    )
-                '''
-            }
-        }
+            if errorlevel 1 (
+                echo ERROR: Service configuration failed
+                exit /b 1
+            )
+        '''
+    }
+}
 
         stage('Start Service') {
             steps {

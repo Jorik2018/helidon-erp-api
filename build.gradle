@@ -60,17 +60,32 @@ dependencies {
     implementation 'org.slf4j:slf4j-jdk14'
 
     // Solo tests
-    testImplementation 'io.helidon.dbclient:helidon-dbclient-jdbc'
-    testImplementation 'io.helidon.dbclient:helidon-dbclient-hikari'
-    testImplementation 'com.h2database:h2'
-    testImplementation 'io.helidon.webclient:helidon-webclient'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+
+    //testImplementation 'io.helidon.webclient:helidon-webclient'
+
+    //testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    //testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+
+
+
+
+
+    
+    testImplementation platform('org.junit:junit-bom:6.0.1')
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     testImplementation 'org.hamcrest:hamcrest-all'
 
     testImplementation 'io.helidon.webserver.testing.junit5:helidon-webserver-testing-junit5'
+
+    testImplementation 'io.helidon.dbclient:helidon-dbclient-jdbc'
+    testImplementation 'io.helidon.dbclient:helidon-dbclient-hikari'
+    testImplementation 'com.h2database:h2'
 }
 
 tasks.named('test') {
