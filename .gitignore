@@ -32,6 +32,7 @@ nb-configuration.xml
 # Eclipse
 .settings
 .settings/
+build/
 .project
 .classpath
 .factorypath
