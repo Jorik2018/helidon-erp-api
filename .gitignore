@@ -5,8 +5,10 @@
 target/
 .m2/
 
-# Package Files #
+# Package Files
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
+
 *.war
 *.nar
 *.ear
