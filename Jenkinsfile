@@ -452,7 +452,7 @@ stage('Configure Service') {
         stage('Health Check') {
             steps {
                 powershell '''
-                    $url = "http://127.0.0.1:$env:PORT/health"
+                    $url = "http://127.0.0.1:$env:PORT/simple-greet"
                     $maxAttempts = 10
 
                     for (
