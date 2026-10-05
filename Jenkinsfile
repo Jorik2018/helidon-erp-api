@@ -351,7 +351,7 @@ stage('Configure Service') {
     steps {
         withCredentials([
             string(
-                credentialsId: 'MONGODB_URI',
+                credentialsId: 'MONGO_URI',
                 variable: 'MONGODB_URI'
             )
         ]) {
