@@ -13,7 +13,7 @@ db:
     url: ${MONGODB_URI}
 
   init-schema: false
-  init-data: true
+  init-data: false
 
   health-check:
     type: "query"
