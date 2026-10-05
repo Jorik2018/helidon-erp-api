@@ -9,7 +9,8 @@ db:
   source: "mongoDb"
 
   connection:
-    url: "mongodb://127.0.0.1:27017/pokemon"
+    #url: "mongodb://127.0.0.1:27017/pokemon"
+    url: ${MONGODB_URI}
 
   init-schema: false
   init-data: true

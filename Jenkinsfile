@@ -324,42 +324,44 @@ stage('Deploy Distribution') {
 
 stage('Configure Service') {
     steps {
-        bat '''
-            @echo off
-
-            echo ==============================
-            echo ===== Configure Service =====
-            echo ==============================
-
-            set "JAVA_EXE=%JAVA_27_HOME%\\bin\\java.exe"
-
-            if not exist "%JAVA_EXE%" (
-                echo ERROR: Java executable not found:
-                echo %JAVA_EXE%
-                exit /b 1
+        withCredentials([
+            string(
+                credentialsId: 'MONGODB_URI',
+                variable: 'MONGODB_URI'
             )
+        ]) {
+            bat '''
+                @echo off
 
-            if not exist "%DEPLOY_DIR%\\lib" (
-                echo ERROR: lib directory not found
-                exit /b 1
-            )
+                echo ==============================
+                echo ===== Configure Service =====
+                echo ==============================
 
-            "%PYTHON_HOME%\\python.exe" ^
-                "%SERVICE_MANAGER%" ^
-                install ^
-                "%SERVICE_ID%" ^
-                "%DEPLOY_DIR%" ^
-                --name "%SERVICE_NAME%" ^
-                --description "%SERVICE_DESCRIPTION%" ^
-                --type rust ^
-                --executable "%JAVA_EXE%" ^
-                --args "-Dserver.port=%PORT% -cp lib\\* org.isobit.erp.Main"
+                set "JAVA_EXE=%JAVA_27_HOME%\\bin\\java.exe"
 
-            if errorlevel 1 (
-                echo ERROR: Service configuration failed
-                exit /b 1
-            )
-        '''
+                if not exist "%JAVA_EXE%" (
+                    echo ERROR: Java executable not found
+                    exit /b 1
+                )
+
+                "%PYTHON_HOME%\\python.exe" ^
+                    "%SERVICE_MANAGER%" ^
+                    install ^
+                    "%SERVICE_ID%" ^
+                    "%DEPLOY_DIR%" ^
+                    --name "%SERVICE_NAME%" ^
+                    --description "%SERVICE_DESCRIPTION%" ^
+                    --type rust ^
+                    --executable "%JAVA_EXE%" ^
+                    --args "-Dserver.port=%PORT% -cp lib\\* org.isobit.erp.Main" ^
+                    --env "MONGODB_URI=%MONGODB_URI%"
+
+                if errorlevel 1 (
+                    echo ERROR: Service configuration failed
+                    exit /b 1
+                )
+            '''
+        }
     }
 }
 
