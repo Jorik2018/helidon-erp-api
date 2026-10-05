@@ -9,8 +9,8 @@ db:
   source: "mongoDb"
 
   connection:
-    #url: "mongodb://127.0.0.1:27017/pokemon"
-    url: ${MONGODB_URI}
+    url: "mongodb+srv://admin:A1_mongodb@cluster0.go2xt.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0"
+    #url: ${MONGODB_URI}
 
   init-schema: false
   init-data: true

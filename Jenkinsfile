@@ -351,46 +351,51 @@ stage('Configure Service') {
     steps {
         withCredentials([
             string(
-                credentialsId: 'MONGO_URI',
+                credentialsId: 'MONGODB_URI',
                 variable: 'MONGODB_URI'
             )
         ]) {
-            bat '''
-                @echo off
+            powershell '''
+                Write-Host "=============================="
+                Write-Host "===== Configure Service ====="
+                Write-Host "=============================="
 
-                echo ==============================
-                echo ===== Configure Service =====
-                echo ==============================
+                $mongoUri = $env:MONGODB_URI
 
-                set "JAVA_EXE=%JAVA_27_HOME%\\bin\\java.exe"
-
-                if not exist "%JAVA_EXE%" (
-                    echo ERROR: Java executable not found
-                    exit /b 1
+                # Agregar database "pokemon" a la URI de Atlas
+                $mongoUri = $mongoUri.Replace(
+                    "mongodb.net/?",
+                    "mongodb.net/pokemon?"
                 )
 
-                "%PYTHON_HOME%\\python.exe" ^
-                    "%SERVICE_MANAGER%" ^
-                    install ^
-                    "%SERVICE_ID%" ^
-                    "%DEPLOY_DIR%" ^
-                    --name "%SERVICE_NAME%" ^
-                    --description "%SERVICE_DESCRIPTION%" ^
-                    --type rust ^
-                    --executable "%JAVA_EXE%" ^
-                    --args "-cp lib\\* org.isobit.erp.Main" ^
-                    --env "SERVER_PORT=%PORT%" ^
-                    --env "MONGODB_URI=%MONGODB_URI%"
+                if ($mongoUri -eq $env:MONGODB_URI) {
+                    Write-Host "WARNING: No se encontro mongodb.net/? en MONGODB_URI"
+                }
+                else {
+                    Write-Host "MONGODB_URI ajustado para database pokemon"
+                }
 
-                if errorlevel 1 (
-                    echo ERROR: Service configuration failed
-                    exit /b 1
-                )
+                $env:MONGODB_URI_DEPLOY = $mongoUri
+
+                & "$env:PYTHON_HOME\\python.exe" `
+                    "$env:SERVICE_MANAGER" `
+                    install `
+                    "$env:SERVICE_ID" `
+                    "$env:DEPLOY_DIR" `
+                    --name "$env:SERVICE_NAME" `
+                    --description "$env:SERVICE_DESCRIPTION" `
+                    --type rust `
+                    --executable "$env:JAVA_27_HOME\\bin\\java.exe" `
+                    --args "-cp lib\\* org.isobit.erp.Main" `
+                    --env "MONGODB_URI=$mongoUri"
+
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Service configuration failed"
+                }
             '''
         }
     }
 }
-
         stage('Start Service') {
             steps {
                 bat '''
