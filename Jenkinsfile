@@ -353,7 +353,8 @@ stage('Configure Service') {
                     --description "%SERVICE_DESCRIPTION%" ^
                     --type rust ^
                     --executable "%JAVA_EXE%" ^
-                    --args "-Dserver.port=%PORT% -cp lib\\* org.isobit.erp.Main" ^
+                    --args "-cp lib\\* org.isobit.erp.Main" ^
+                    --env "SERVER_PORT=%PORT%" ^
                     --env "MONGODB_URI=%MONGODB_URI%"
 
                 if errorlevel 1 (
