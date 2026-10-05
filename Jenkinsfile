@@ -216,6 +216,31 @@ stage('Gradle Version') {
     }
 }
 
+stage('Configure Production') {
+    steps {
+        powershell '''
+            $config = "$env:WORKSPACE\\src\\main\\resources\\application.yaml"
+
+            Write-Host "Configurando application.yaml para produccion"
+            Write-Host "PORT=$env:PORT"
+
+            $content = Get-Content $config -Raw
+
+            $content = $content -replace `
+                '(?m)^\\s*port:\\s*\\d+\\s*$', `
+                "  port: $env:PORT"
+
+            Set-Content `
+                -Path $config `
+                -Value $content `
+                -Encoding UTF8
+
+            Write-Host "Configuracion actual:"
+            Get-Content $config
+        '''
+    }
+}
+
 stage('Build') {
     steps {
         bat '''
